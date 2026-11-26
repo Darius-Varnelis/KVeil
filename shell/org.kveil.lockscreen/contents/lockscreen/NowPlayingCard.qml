@@ -27,27 +27,6 @@ Item {
     Kirigami.Theme.inherit: false
     Kirigami.Theme.textColor: fg
 
-    // Soft drop shadow behind the card (helps the light frosted pill separate from bright skies)
-    Rectangle {
-        id: shadowSource
-        anchors.fill: parent
-        radius: Kirigami.Units.gridUnit
-        color: "black"
-        visible: false
-        layer.enabled: true
-    }
-    MultiEffect {
-        anchors.fill: parent
-        source: shadowSource
-        shadowEnabled: true
-        shadowColor: Qt.rgba(0, 0, 0, card.lightBackdrop ? 0.14 : 0.28)
-        shadowBlur: 1.0
-        blurMax: 16
-        shadowVerticalOffset: 3
-        autoPaddingEnabled: true
-        opacity: 0.65
-    }
-
     // Frosted glass: blurred, tinted copy of the wallpaper area behind the card
     ShaderEffectSource {
         id: glassSource
@@ -74,9 +53,9 @@ Item {
         source: glassSource
         blurEnabled: true
         blur: 1.0
-        blurMax: 64
-        saturation: card.lightBackdrop ? 0.35 : 0.15
-        brightness: card.lightBackdrop ? 0.05 : -0.32
+        blurMax: 56
+        saturation: card.lightBackdrop ? 0.30 : 0.15
+        brightness: card.lightBackdrop ? 0.18 : -0.32
         maskEnabled: true
         maskSource: glassMask
     }
@@ -93,9 +72,9 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: Kirigami.Units.gridUnit
-        color: card.lightBackdrop ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(0, 0, 0, 0.22)
+        color: card.lightBackdrop ? Qt.rgba(1, 1, 1, 0.30) : Qt.rgba(0, 0, 0, 0.22)
         border.width: 1
-        border.color: card.lightBackdrop ? Qt.rgba(0, 0, 0, 0.04) : Qt.rgba(1, 1, 1, 0.08)
+        border.color: card.lightBackdrop ? Qt.rgba(1, 1, 1, 0.38) : Qt.rgba(1, 1, 1, 0.08)
         Behavior on color { ColorAnimation { duration: Kirigami.Units.longDuration } }
         Behavior on border.color { ColorAnimation { duration: Kirigami.Units.longDuration } }
     }
