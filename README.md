@@ -25,7 +25,7 @@ An Apple/macOS-style lock screen shell (`org.kveil.lockscreen`) and Kirigami set
 - **KDE Plasma 6** (Qt 6, `kscreenlocker`, `qt6-5compat` / `Qt5Compat.GraphicalEffects`, `QtQuick.Effects`)
 - **Python 3** with **PySide6** and **PyGObject** (`gi.repository.Gio`)
 - **systemd --user** (for the KWin `PLASMA_DEFAULT_SHELL` override and background weather/MPRIS helpers)
-- **Optional:** Public **Howdy** (tested with 2.6.1) or **fprintd**
+- **Optional:** **Howdy** (tested with 2.6.1) or **fprintd**
 
 ### Installing Dependencies by Distro
 
@@ -61,7 +61,7 @@ chmod +x install.sh uninstall.sh
 
 ## Optional: Howdy Face Unlock & Live IR Viewfinder
 
-KVeil works out of the box with password-only lock screens and `fprintd`. If you use the public **Howdy** package:
+KVeil works out of the box with password-only lock screens and `fprintd`. If you use **Howdy**:
 
 1. Configure Howdy in `/etc/pam.d/kde-fingerprint` (and ensure your user can read `/usr/lib/security/howdy` or your distro's Howdy security directory since `kscreenlocker_greet` runs as your user, not root).
 2. To enable the live IR camera viewfinder (`IrCameraPopup.qml`), copy the staged `hooks/compare.py` hook (tested against Howdy 2.6.1) using the **Copy sudo command** button inside KVeil's **Status & Unlock → Face & IR** tab:
@@ -85,3 +85,7 @@ Log out and log back in afterward to revert KWin to the default Plasma lock scre
 - Tested on **KDE Plasma 6.7 / 6.8** (Wayland; X11 drop-in is also installed).
 - Because `org.kveil.lockscreen` overrides `LockScreenUi.qml` and `MainBlock.qml` from Plasma's desktop shell, major future Plasma 6 releases may require syncing upstream QML changes.
 - Original upstream KDE lock screen files carry `GPL-2.0-or-later` / `LGPL-2.0-or-later` headers; see [LICENSE](LICENSE).
+
+## AI Disclosure
+
+This project was created with assistance from **Claude Code** and **Google Antigravity**.
