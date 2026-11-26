@@ -2,6 +2,8 @@
 
 An Apple/macOS-style lock screen shell (`org.darc.lockscreen`) and Kirigami settings app (**KVeil**) for **KDE Plasma 6**, with adaptive backdrop contrast, frosted Now Playing media widget, cached local weather, and optional **Howdy** (Face ID + live IR viewfinder) and **fprintd** (Touch ID-style) status integration.
 
+![KVeil lock screen showing the adaptive clock, greeting, weather, frosted Now Playing widget, and top-right status bar](images/Screenshot_20261126_214215.png)
+
 ## Features
 
 - **macOS-style lock screen layout**
