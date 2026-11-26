@@ -95,7 +95,7 @@ Item {
         radius: Kirigami.Units.gridUnit
         color: card.lightBackdrop ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(0, 0, 0, 0.22)
         border.width: 1
-        border.color: card.lightBackdrop ? Qt.rgba(0, 0, 0, 0.10) : Qt.rgba(1, 1, 1, 0.08)
+        border.color: card.lightBackdrop ? Qt.rgba(0, 0, 0, 0.04) : Qt.rgba(1, 1, 1, 0.08)
         Behavior on color { ColorAnimation { duration: Kirigami.Units.longDuration } }
         Behavior on border.color { ColorAnimation { duration: Kirigami.Units.longDuration } }
     }
