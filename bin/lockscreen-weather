@@ -4,9 +4,9 @@
 # safe JS string literals; numbers are coerced to int.
 import json, os, sys, tempfile, urllib.request, urllib.parse, datetime
 
-OUT_DIR = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "darc-lockscreen")
+OUT_DIR = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "kveil")
 OUT = os.path.join(OUT_DIR, "Weather.qml")
-SETTINGS_PATH = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "darc-lockscreen", "settings.json")
+SETTINGS_PATH = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "kveil", "settings.json")
 
 unit = "C"
 location = ""

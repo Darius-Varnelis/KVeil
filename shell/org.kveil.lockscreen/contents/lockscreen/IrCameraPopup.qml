@@ -1,6 +1,6 @@
 // Cute frosted pop-up viewfinder showing what the IR camera sees while Howdy scans.
 // Frames (frame.jpg) and face bbox + sequence (2x1 face.png) are atomically written by
-// Howdy's compare.py to ~/.cache/darc-lockscreen/ir-preview/ when run by kscreenlocker.
+// Howdy's compare.py to ~/.cache/kveil/ir-preview/ when run by kscreenlocker.
 import QtQuick
 import QtQuick.Window
 import QtQuick.Layouts
@@ -31,9 +31,9 @@ Item {
     property bool frostedGlass: true
     property string fontFamily: ""
 
-    // Override directory for testing in a harness; defaults to ~/.cache/darc-lockscreen/ir-preview
+    // Override directory for testing in a harness; defaults to ~/.cache/kveil/ir-preview
     property string previewDir: StandardPaths.writableLocation(StandardPaths.GenericCacheLocation)
-                                + "/darc-lockscreen/ir-preview"
+                                + "/kveil/ir-preview"
 
     readonly property bool softwareRendering: GraphicsInfo.api === GraphicsInfo.Software
     readonly property int bezel: 5

@@ -38,10 +38,10 @@ Item {
     // Whether we are expected to visualize the prompt message for the authenticator
     property bool showPrompt: false // this is set for real when an authenticator is selected
 
-    // User settings written by Lock Screen Settings GUI to ~/.cache/darc-lockscreen/Settings.qml
+    // User settings written by Lock Screen Settings GUI to ~/.cache/kveil/Settings.qml
     Loader {
         id: userSettingsLoader
-        source: StandardPaths.writableLocation(StandardPaths.GenericCacheLocation) + "/darc-lockscreen/Settings.qml"
+        source: StandardPaths.writableLocation(StandardPaths.GenericCacheLocation) + "/kveil/Settings.qml"
     }
     function pref(key, fallback) {
         return (userSettingsLoader.item && userSettingsLoader.item[key] !== undefined)

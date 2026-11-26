@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# Mirrors MPRIS album art URLs (http/https) into ~/.cache/darc-lockscreen/art/<md5(url)>.img
+# Mirrors MPRIS album art URLs (http/https) into ~/.cache/kveil/art/<md5(url)>.img
 # so the lock screen, which blocks network requests, can show the cover via Qt.md5(artUrl).
 import hashlib, os, threading, urllib.request
 import gi
 gi.require_version("Gio", "2.0")
 from gi.repository import Gio, GLib
 
-CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "darc-lockscreen", "art")
+CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "kveil", "art")
 MAX_BYTES = 10 * 1024 * 1024
 KEEP = 50
 os.makedirs(CACHE, exist_ok=True)

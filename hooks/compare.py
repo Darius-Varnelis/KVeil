@@ -204,7 +204,7 @@ dark_running_total = 0
 
 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
 
-# Live IR preview emitter for the KDE lock screen (org.darc.lockscreen)
+# Live IR preview emitter for the KDE lock screen (org.kveil.lockscreen)
 def _init_lockscreen_preview():
 	if os.environ.get("HOWDY_PREVIEW") != "1":
 		if os.geteuid() == 0:
@@ -231,14 +231,14 @@ def _init_lockscreen_preview():
 	user_home = pwd.getpwuid(os.geteuid()).pw_dir
 	cfg_home = os.environ.get("XDG_CONFIG_HOME") or os.path.join(user_home, ".config")
 	try:
-		with open(os.path.join(cfg_home, "darc-lockscreen", "settings.json"), "r") as f:
+		with open(os.path.join(cfg_home, "kveil", "settings.json"), "r") as f:
 			cfg = json.load(f)
 		if cfg.get("irPreviewEnabled") is False:
 			return None
 	except Exception:
 		pass
 	cache_home = os.environ.get("XDG_CACHE_HOME") or os.path.join(user_home, ".cache")
-	pdir = os.path.join(cache_home, "darc-lockscreen", "ir-preview")
+	pdir = os.path.join(cache_home, "kveil", "ir-preview")
 	os.makedirs(pdir, mode=0o700, exist_ok=True)
 	return pdir
 
@@ -247,7 +247,7 @@ def _preview_tracking_enabled():
 		import pwd
 		user_home = pwd.getpwuid(os.geteuid()).pw_dir
 		cfg_home = os.environ.get("XDG_CONFIG_HOME") or os.path.join(user_home, ".config")
-		with open(os.path.join(cfg_home, "darc-lockscreen", "settings.json"), "r") as f:
+		with open(os.path.join(cfg_home, "kveil", "settings.json"), "r") as f:
 			return json.load(f).get("irPreviewTracking", True) is not False
 	except Exception:
 		return True

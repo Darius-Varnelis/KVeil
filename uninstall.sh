@@ -11,8 +11,8 @@ DATA_BASE="${XDG_DATA_HOME:-${HOME}/.local/share}"
 CFG_BASE="${XDG_CONFIG_HOME:-${HOME}/.config}"
 CACHE_BASE="${XDG_CACHE_HOME:-${HOME}/.cache}"
 
-APP_DIR="${DATA_BASE}/darc-lockscreen"
-SHELL_DIR="${DATA_BASE}/plasma/shells/org.darc.lockscreen"
+APP_DIR="${DATA_BASE}/kveil"
+SHELL_DIR="${DATA_BASE}/plasma/shells/org.kveil.lockscreen"
 APPS_DIR="${DATA_BASE}/applications"
 ICON_FILE="${DATA_BASE}/icons/hicolor/scalable/apps/kveil.svg"
 SYSTEMD_DIR="${CFG_BASE}/systemd/user"
@@ -37,10 +37,10 @@ rm -f \
 rmdir "${SYSTEMD_DIR}/plasma-kwin_wayland.service.d" >/dev/null 2>&1 || true
 rmdir "${SYSTEMD_DIR}/plasma-kwin_x11.service.d" >/dev/null 2>&1 || true
 
-rm -rf "${APP_DIR}" "${SHELL_DIR}"
+rm -rf "${APP_DIR}" "${SHELL_DIR}" "${DATA_BASE}/darc-lockscreen" "${DATA_BASE}/plasma/shells/org.darc.lockscreen"
 
 if [[ "${PURGE}" -eq 1 ]]; then
-    rm -rf "${CFG_BASE}/darc-lockscreen" "${CACHE_BASE}/darc-lockscreen"
+    rm -rf "${CFG_BASE}/kveil" "${CACHE_BASE}/kveil" "${CFG_BASE}/darc-lockscreen" "${CACHE_BASE}/darc-lockscreen"
 fi
 
 if command -v systemctl >/dev/null 2>&1; then

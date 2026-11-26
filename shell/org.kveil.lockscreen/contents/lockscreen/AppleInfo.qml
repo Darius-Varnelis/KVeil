@@ -1,5 +1,5 @@
 // Greeting + cached weather line and a Now Playing card, shown under the clock.
-// Weather comes from ~/.cache/darc-lockscreen/Weather.qml (written by ~/.local/bin/lockscreen-weather,
+// Weather comes from ~/.cache/kveil/Weather.qml (written by ~/.local/bin/lockscreen-weather,
 // since the greeter blocks network access).
 import QtQuick
 import QtQuick.Layouts
@@ -32,7 +32,7 @@ ColumnLayout {
     Loader {
         id: weather
         active: root.showWeather
-        source: StandardPaths.writableLocation(StandardPaths.GenericCacheLocation) + "/darc-lockscreen/Weather.qml"
+        source: StandardPaths.writableLocation(StandardPaths.GenericCacheLocation) + "/kveil/Weather.qml"
         asynchronous: true
     }
 

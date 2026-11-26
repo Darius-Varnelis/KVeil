@@ -847,7 +847,7 @@ Kirigami.ApplicationWindow {
                 QQC2.Label {
                     Kirigami.FormData.label: "Lock screen shell:"
                     text: win.st.shellInstalled
-                        ? (win.st.shellActive ? "Installed and active (org.darc.lockscreen)" : "Installed (set PLASMA_DEFAULT_SHELL=org.darc.lockscreen)")
+                        ? (win.st.shellActive ? "Installed and active (org.kveil.lockscreen)" : "Installed (set PLASMA_DEFAULT_SHELL=org.kveil.lockscreen)")
                         : "Not found"
                 }
 

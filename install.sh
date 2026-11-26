@@ -7,11 +7,18 @@ BIN_DIR="${HOME}/.local/bin"
 DATA_BASE="${XDG_DATA_HOME:-${HOME}/.local/share}"
 CFG_BASE="${XDG_CONFIG_HOME:-${HOME}/.config}"
 
-APP_DIR="${DATA_BASE}/darc-lockscreen"
-SHELL_DIR="${DATA_BASE}/plasma/shells/org.darc.lockscreen"
+APP_DIR="${DATA_BASE}/kveil"
+SHELL_DIR="${DATA_BASE}/plasma/shells/org.kveil.lockscreen"
 APPS_DIR="${DATA_BASE}/applications"
 ICON_DIR="${DATA_BASE}/icons/hicolor/scalable/apps"
 SYSTEMD_DIR="${CFG_BASE}/systemd/user"
+
+# Migrate legacy darc-lockscreen config and remove old app/shell dirs if upgrading
+if [[ -f "${CFG_BASE}/darc-lockscreen/settings.json" && ! -f "${CFG_BASE}/kveil/settings.json" ]]; then
+    mkdir -p "${CFG_BASE}/kveil"
+    cp -a "${CFG_BASE}/darc-lockscreen/settings.json" "${CFG_BASE}/kveil/settings.json"
+fi
+rm -rf "${DATA_BASE}/darc-lockscreen" "${DATA_BASE}/plasma/shells/org.darc.lockscreen"
 
 echo "[1/5] Installing KVeil settings app -> ${APP_DIR}"
 mkdir -p "${APP_DIR}" "${BIN_DIR}" "${APPS_DIR}" "${ICON_DIR}"
@@ -31,7 +38,7 @@ install -Dm755 "${ROOT}/bin/lockscreen-mpris-art" "${BIN_DIR}/lockscreen-mpris-a
 echo "[3/5] Installing Plasma 6 lock screen shell -> ${SHELL_DIR}"
 rm -rf "${SHELL_DIR}"
 mkdir -p "${SHELL_DIR}"
-cp -a "${ROOT}/shell/org.darc.lockscreen/." "${SHELL_DIR}/"
+cp -a "${ROOT}/shell/org.kveil.lockscreen/." "${SHELL_DIR}/"
 
 echo "[4/5] Installing systemd user units & KWin lock screen overrides -> ${SYSTEMD_DIR}"
 mkdir -p \
@@ -72,7 +79,7 @@ echo ""
 echo "KVeil installed!"
 echo "  - Launch GUI: ${BIN_DIR}/kveil (or 'KVeil' from your app launcher)"
 echo "  - Test immediately without re-login using KVeil's 'Test Lock Screen' button"
-echo "  - Log out and log back in once so KWin picks up PLASMA_DEFAULT_SHELL=org.darc.lockscreen"
+echo "  - Log out and log back in once so KWin picks up PLASMA_DEFAULT_SHELL=org.kveil.lockscreen"
 if [[ "${missing}" -ne 0 ]]; then
     echo "  - Install missing dependencies listed above before launching KVeil"
 fi

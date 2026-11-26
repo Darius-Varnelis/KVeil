@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PySide6 + Kirigami settings GUI for the org.darc.lockscreen Plasma lock screen."""
+"""PySide6 + Kirigami settings GUI for the org.kveil.lockscreen Plasma lock screen."""
 import getpass
 import os
 import shlex
@@ -22,7 +22,7 @@ SHELL_DIR = os.path.join(
     os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share")),
     "plasma",
     "shells",
-    "org.darc.lockscreen",
+    "org.kveil.lockscreen",
 )
 CUSTOM_FONTS_DIR = os.path.join(
     os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share")),
@@ -258,7 +258,7 @@ class LockscreenSettingsBackend(QObject):
         cache_home = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
         return {
             "shellInstalled": shell_installed,
-            "shellActive": env_shell == "org.darc.lockscreen" or systemd_dropin,
+            "shellActive": env_shell == "org.kveil.lockscreen" or systemd_dropin,
             "howdyPresent": howdy_present,
             "howdyBackend": howdy_backend,
             "howdyRsPresent": howdy_rs_present,
@@ -272,7 +272,7 @@ class LockscreenSettingsBackend(QObject):
             "stagedComparePath": STAGED_COMPARE,
             "howdyComparePath": howdy_compare,
             "weatherBinOk": weather_bin_ok,
-            "weatherCached": os.path.exists(os.path.join(cache_home, "darc-lockscreen", "Weather.qml")),
+            "weatherCached": os.path.exists(os.path.join(cache_home, "kveil", "Weather.qml")),
             "hasSfPro": has_sf_pro,
             "installedFonts": installed_fonts,
             "customFonts": custom_fonts,
@@ -418,7 +418,7 @@ class LockscreenSettingsBackend(QObject):
             self.toastRequested.emit("kscreenlocker_greet not found")
             return
         env = dict(os.environ)
-        env["PLASMA_DEFAULT_SHELL"] = "org.darc.lockscreen"
+        env["PLASMA_DEFAULT_SHELL"] = "org.kveil.lockscreen"
         subprocess.Popen([greeter, "--testing"], env=env, start_new_session=True)
         self.toastRequested.emit("Launched lock screen preview (--testing)")
 

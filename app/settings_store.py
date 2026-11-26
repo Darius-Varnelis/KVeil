@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Shared settings schema, persistence, and QML export for org.darc.lockscreen."""
+"""Shared settings schema, persistence, and QML export for org.kveil.lockscreen."""
 import json
 import os
 import tempfile
 
 CONFIG_DIR = os.path.join(
     os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")),
-    "darc-lockscreen",
+    "kveil",
 )
 CACHE_DIR = os.path.join(
     os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")),
-    "darc-lockscreen",
+    "kveil",
 )
 SETTINGS_JSON = os.path.join(CONFIG_DIR, "settings.json")
 SETTINGS_QML = os.path.join(CACHE_DIR, "Settings.qml")

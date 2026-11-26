@@ -1,7 +1,7 @@
 {
     "KPackageStructure": "Plasma/Shell",
     "KPlugin": {
-        "Id": "org.darc.lockscreen",
+        "Id": "org.kveil.lockscreen",
         "Name": "Desktop (Apple lock screen)",
         "Description": "Lock screen override; falls back to org.kde.plasma.desktop"
     },

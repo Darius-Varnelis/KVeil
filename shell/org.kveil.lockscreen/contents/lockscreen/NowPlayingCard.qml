@@ -21,9 +21,9 @@ Item {
     property Item backdropItem
     readonly property color fg: lightBackdrop ? Qt.rgba(0.05, 0.05, 0.08, 0.9) : "white"
     readonly property color fgDim: lightBackdrop ? Qt.rgba(0.05, 0.05, 0.08, 0.6) : Qt.rgba(1, 1, 1, 0.7)
-    // album art is mirrored to ~/.cache/darc-lockscreen/art/<md5(url)>.img by ~/.local/bin/lockscreen-mpris-art,
+    // album art is mirrored to ~/.cache/kveil/art/<md5(url)>.img by ~/.local/bin/lockscreen-mpris-art,
     // because the greeter blocks network requests
-    readonly property string artCache: StandardPaths.writableLocation(StandardPaths.GenericCacheLocation) + "/darc-lockscreen/art/"
+    readonly property string artCache: StandardPaths.writableLocation(StandardPaths.GenericCacheLocation) + "/kveil/art/"
     Kirigami.Theme.inherit: false
     Kirigami.Theme.textColor: fg
 
