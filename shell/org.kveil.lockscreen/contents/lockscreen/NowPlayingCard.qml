@@ -27,6 +27,27 @@ Item {
     Kirigami.Theme.inherit: false
     Kirigami.Theme.textColor: fg
 
+    // Soft drop shadow behind the card (helps the light frosted pill separate from bright skies)
+    Rectangle {
+        id: shadowSource
+        anchors.fill: parent
+        radius: Kirigami.Units.gridUnit
+        color: "black"
+        visible: false
+        layer.enabled: true
+    }
+    MultiEffect {
+        anchors.fill: parent
+        source: shadowSource
+        shadowEnabled: true
+        shadowColor: Qt.rgba(0, 0, 0, card.lightBackdrop ? 0.22 : 0.36)
+        shadowBlur: 1.0
+        blurMax: 24
+        shadowVerticalOffset: 4
+        autoPaddingEnabled: true
+        opacity: 0.75
+    }
+
     // Frosted glass: blurred, tinted copy of the wallpaper area behind the card
     ShaderEffectSource {
         id: glassSource
@@ -35,7 +56,7 @@ Item {
         sourceItem: card.backdropItem
         live: true
         function updateRect() {
-            if (card.backdropItem) {
+            if (card.backdropItem && card.width > 0 && card.height > 0) {
                 sourceRect = card.mapToItem(card.backdropItem, 0, 0, card.width, card.height);
             }
         }
@@ -53,9 +74,9 @@ Item {
         source: glassSource
         blurEnabled: true
         blur: 1.0
-        blurMax: 48
-        saturation: 0.15
-        brightness: card.lightBackdrop ? 0.04 : -0.32
+        blurMax: 64
+        saturation: card.lightBackdrop ? 0.25 : 0.15
+        brightness: card.lightBackdrop ? 0.26 : -0.32
         maskEnabled: true
         maskSource: glassMask
     }
@@ -64,16 +85,19 @@ Item {
     onYChanged: glassSource.updateRect()
     onWidthChanged: glassSource.updateRect()
     onHeightChanged: glassSource.updateRect()
+    onVisibleChanged: if (visible) glassRefreshTimer.restart()
     onBackdropItemChanged: glassSource.updateRect()
-    Timer { interval: 500; running: true; onTriggered: glassSource.updateRect() }
+    Component.onCompleted: glassRefreshTimer.restart()
+    Timer { id: glassRefreshTimer; interval: 250; running: true; onTriggered: glassSource.updateRect() }
 
     Rectangle {
         anchors.fill: parent
         radius: Kirigami.Units.gridUnit
-        color: card.lightBackdrop ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.22)
+        color: card.lightBackdrop ? Qt.rgba(1, 1, 1, 0.36) : Qt.rgba(0, 0, 0, 0.22)
         border.width: 1
-        border.color: card.lightBackdrop ? Qt.rgba(0, 0, 0, 0.08) : Qt.rgba(1, 1, 1, 0.08)
+        border.color: card.lightBackdrop ? Qt.rgba(1, 1, 1, 0.55) : Qt.rgba(1, 1, 1, 0.08)
         Behavior on color { ColorAnimation { duration: Kirigami.Units.longDuration } }
+        Behavior on border.color { ColorAnimation { duration: Kirigami.Units.longDuration } }
     }
 
     Repeater {

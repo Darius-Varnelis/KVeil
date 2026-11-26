@@ -32,8 +32,13 @@ Item {
     property string fontFamily: ""
 
     // Override directory for testing in a harness; defaults to ~/.cache/kveil/ir-preview
+    // Also probes legacy ~/.cache/darc-lockscreen/ir-preview when using an older hook/howdy-rs build.
     property string previewDir: StandardPaths.writableLocation(StandardPaths.GenericCacheLocation)
                                 + "/kveil/ir-preview"
+    readonly property string _legacyPreviewDir: StandardPaths.writableLocation(StandardPaths.GenericCacheLocation)
+                                                + "/darc-lockscreen/ir-preview"
+    property bool _useLegacyDir: false
+    readonly property string _activePreviewDir: _useLegacyDir ? _legacyPreviewDir : previewDir
 
     readonly property bool softwareRendering: GraphicsInfo.api === GraphicsInfo.Software
     readonly property int bezel: 5
@@ -89,6 +94,7 @@ Item {
             _dismissed = false;
             _linger = false;
             _hasFrame = false;
+            _useLegacyDir = false;
             _faceBox = null;
             _pendingFaceBox = null;
             _lastFrameSeq = -1;
@@ -126,6 +132,7 @@ Item {
             frameB.source = "";
             faceDataCanvas.resetUrl();
             _hasFrame = false;
+            _useLegacyDir = false;
             _faceBox = null;
             _pendingFaceBox = null;
             _lastFrameSeq = -1;
@@ -156,7 +163,7 @@ Item {
         triggeredOnStart: true
         onTriggered: {
             root._pollSeq++;
-            faceDataCanvas.poll(root.previewDir + "/face.png?r=" + root._pollSeq);
+            faceDataCanvas.poll(root._activePreviewDir + "/face.png?r=" + root._pollSeq);
         }
     }
 
@@ -195,6 +202,8 @@ Item {
             loading = false;
             if (loadedUrl && isImageLoaded(loadedUrl)) {
                 requestPaint();
+            } else if (!root._hasFrame && root.previewDir.endsWith("/kveil/ir-preview")) {
+                root._useLegacyDir = !root._useLegacyDir;
             }
         }
         onPaint: {
@@ -221,7 +230,7 @@ Item {
                 root._lastFrameSeq = seq;
                 root._pendingFaceBox = box;
                 root._frameLoadSeq++;
-                const frameUrl = root.previewDir + "/frame.jpg?r=" + root._frameLoadSeq;
+                const frameUrl = root._activePreviewDir + "/frame.jpg?r=" + root._frameLoadSeq;
                 if (root._useBufferA) {
                     frameB.source = frameUrl;
                 } else {
