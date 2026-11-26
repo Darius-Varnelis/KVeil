@@ -205,8 +205,10 @@ Kirigami.ApplicationWindow {
                         QQC2.Label {
                             text: "12:34"
                             font.family: modelData
+                            font.styleName: modelData === "SF Pro Display" ? "Bold" : ""
                             font.weight: Font.Bold
-                            opacity: 0.7
+                            font.features: { "tnum": 1 }
+                            opacity: 0.75
                         }
                     }
                     onClicked: {
@@ -792,13 +794,34 @@ Kirigami.ApplicationWindow {
                     }
                 }
 
-                QQC2.Label {
+                RowLayout {
                     Kirigami.FormData.label: "Font preview:"
-                    text: "12:34  \u00b7  Good evening"
-                    font.family: (win.cfg.fontFamily && win.cfg.fontFamily !== "") ? win.cfg.fontFamily : Kirigami.Theme.defaultFont.family
-                    font.weight: Font.DemiBold
-                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.15
-                    opacity: 0.85
+                    spacing: Kirigami.Units.smallSpacing
+                    readonly property string previewFamily: (win.cfg.fontFamily && win.cfg.fontFamily !== "") ? win.cfg.fontFamily : Kirigami.Theme.defaultFont.family
+
+                    QQC2.Label {
+                        text: "12:34"
+                        font.family: parent.previewFamily
+                        font.styleName: win.cfg.fontFamily === "SF Pro Display" ? "Bold" : ""
+                        font.weight: Font.Bold
+                        font.features: { "tnum": 1 }
+                        font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.4
+                        opacity: 0.9
+                    }
+                    QQC2.Label {
+                        text: "\u00b7"
+                        font.family: parent.previewFamily
+                        font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.15
+                        opacity: 0.75
+                    }
+                    QQC2.Label {
+                        text: "Good evening"
+                        font.family: parent.previewFamily
+                        font.styleName: win.cfg.fontFamily === "SF Pro Display" ? "Semibold" : ""
+                        font.weight: Font.DemiBold
+                        font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.15
+                        opacity: 0.85
+                    }
                 }
 
                 ColumnLayout {
