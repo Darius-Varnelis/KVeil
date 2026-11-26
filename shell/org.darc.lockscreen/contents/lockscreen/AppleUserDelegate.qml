@@ -23,7 +23,7 @@ Item {
     property real faceSize: Kirigami.Units.gridUnit * 3
     property color textColor: "white"
     property bool lightBackdrop: false
-    property string fontFamily: "SF Pro Text"
+    property string fontFamily: ""
     property bool showLegibleShadows: true
     signal clicked()
 

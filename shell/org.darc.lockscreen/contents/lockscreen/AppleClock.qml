@@ -17,7 +17,7 @@ ColumnLayout {
     property string clock24Hour: "auto" // "auto", "24h", "12h"
     property bool showAmPm: false
     property real clockScale: 1.0
-    property string fontFamily: "SF Pro Display"
+    property string fontFamily: ""
     readonly property color vibrancy: lightBackdrop ? Qt.rgba(0.05, 0.05, 0.08, 0.84) : Qt.rgba(1, 1, 1, 0.88)
 
     spacing: 0

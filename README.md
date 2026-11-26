@@ -16,6 +16,7 @@ An Apple/macOS-style lock screen shell (`org.darc.lockscreen`) and Kirigami sett
   - **Fingerprint (`fprintd`)**: Touch ID-style status feedback in the same lock screen layout.
 - **KVeil settings GUI**
   - Configure all options live, preview immediately via **Test Lock Screen** (`kscreenlocker_greet --testing`), and inspect system/PAM/helper status.
+  - Pick any installed system font or import custom `.ttf` / `.otf` / `.ttc` font files (KVeil does not bundle proprietary fonts; added fonts are installed locally to `~/.local/share/fonts/kveil/`).
 
 ## Requirements
 
@@ -47,7 +48,7 @@ An Apple/macOS-style lock screen shell (`org.darc.lockscreen`) and Kirigami sett
 ## Installation
 
 ```bash
-git clone <your-repo-url> kveil
+git clone https://github.com/Darius-Varnelis/KVeil.git kveil
 cd kveil
 chmod +x install.sh uninstall.sh
 ./install.sh

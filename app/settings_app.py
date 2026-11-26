@@ -24,6 +24,12 @@ SHELL_DIR = os.path.join(
     "shells",
     "org.darc.lockscreen",
 )
+CUSTOM_FONTS_DIR = os.path.join(
+    os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share")),
+    "fonts",
+    "kveil",
+)
+FONT_EXTENSIONS = {".ttf", ".otf", ".ttc"}
 STAGED_COMPARE = os.path.join(APP_DIR, "compare.py")
 HOWDY_ENABLE_KEYS = {"faceStatusEnabled", "irPreviewEnabled"}
 FPRINT_ENABLE_KEYS = {"fingerprintStatusEnabled"}
@@ -99,15 +105,66 @@ class LockscreenSettingsBackend(QObject):
 
     def __init__(self):
         super().__init__()
+        self._custom_font_ids = {}
+        self._scan_custom_fonts()
         first_run = not os.path.exists(SETTINGS_JSON)
         self._settings = load_settings()
         if first_run:
             families = set(QFontDatabase.families())
-            if "SF Pro Display" not in families and "SF Pro Text" not in families:
+            if "SF Pro Display" in families:
+                self._settings["fontFamily"] = "SF Pro Display"
+            elif "SF Pro Text" in families:
+                self._settings["fontFamily"] = "SF Pro Text"
+            else:
                 self._settings["fontFamily"] = ""
         # Ensure Settings.qml exists on first launch so the lock screen picks up defaults
         save_settings(self._settings)
         self._status = self._collect_status()
+
+    def _run_fc_cache(self):
+        fc_cache = shutil.which("fc-cache")
+        if fc_cache and os.path.isdir(CUSTOM_FONTS_DIR):
+            try:
+                subprocess.run(
+                    [fc_cache, "-f", CUSTOM_FONTS_DIR],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=5,
+                )
+            except Exception:
+                pass
+
+    def _scan_custom_fonts(self):
+        if not os.path.isdir(CUSTOM_FONTS_DIR):
+            for path, (fid, _fams) in list(self._custom_font_ids.items()):
+                if fid != -1:
+                    QFontDatabase.removeApplicationFont(fid)
+            self._custom_font_ids.clear()
+            return []
+
+        existing_paths = set()
+        custom_fonts = []
+        for fname in sorted(os.listdir(CUSTOM_FONTS_DIR), key=str.casefold):
+            ext = os.path.splitext(fname)[1].lower()
+            if ext not in FONT_EXTENSIONS:
+                continue
+            path = os.path.join(CUSTOM_FONTS_DIR, fname)
+            if not os.path.isfile(path):
+                continue
+            existing_paths.add(path)
+            if path not in self._custom_font_ids:
+                fid = QFontDatabase.addApplicationFont(path)
+                fams = list(dict.fromkeys(QFontDatabase.applicationFontFamilies(fid))) if fid != -1 else []
+                self._custom_font_ids[path] = (fid, fams)
+            _, fams = self._custom_font_ids[path]
+            custom_fonts.append({"fileName": fname, "families": fams})
+
+        for path in list(self._custom_font_ids):
+            if path not in existing_paths:
+                fid, _fams = self._custom_font_ids.pop(path)
+                if fid != -1:
+                    QFontDatabase.removeApplicationFont(fid)
+        return custom_fonts
 
     def _collect_status(self):
         shell_installed = os.path.isdir(os.path.join(SHELL_DIR, "contents", "lockscreen"))
@@ -194,7 +251,9 @@ class LockscreenSettingsBackend(QObject):
         fprintd_pam_configured = ("pam_fprintd.so" in pam_txt) and ("howdy" not in pam_txt)
         weather_bin = _find_weather_bin()
         weather_bin_ok = os.path.isfile(weather_bin) and os.access(weather_bin, os.X_OK)
-        families = set(QFontDatabase.families())
+        custom_fonts = self._scan_custom_fonts()
+        installed_fonts = sorted(set(QFontDatabase.families()), key=str.casefold)
+        families = set(installed_fonts)
         has_sf_pro = "SF Pro Display" in families or "SF Pro Text" in families
         cache_home = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
         return {
@@ -215,6 +274,9 @@ class LockscreenSettingsBackend(QObject):
             "weatherBinOk": weather_bin_ok,
             "weatherCached": os.path.exists(os.path.join(cache_home, "darc-lockscreen", "Weather.qml")),
             "hasSfPro": has_sf_pro,
+            "installedFonts": installed_fonts,
+            "customFonts": custom_fonts,
+            "customFontsDir": CUSTOM_FONTS_DIR,
             "configPath": SETTINGS_JSON,
         }
 
@@ -247,12 +309,89 @@ class LockscreenSettingsBackend(QObject):
     @Slot()
     def resetDefaults(self):
         defaults = dict(DEFAULTS)
-        families = set(QFontDatabase.families())
-        if "SF Pro Display" not in families and "SF Pro Text" not in families:
-            defaults["fontFamily"] = ""
         self._settings = save_settings(defaults)
         self.settingsChanged.emit()
         self.toastRequested.emit("Reset all settings to defaults")
+
+    @Slot("QVariantList")
+    def addFontFiles(self, file_urls):
+        os.makedirs(CUSTOM_FONTS_DIR, exist_ok=True)
+        added_families = []
+        failed_files = []
+
+        for item in file_urls:
+            local_path = item.toLocalFile() if isinstance(item, QUrl) else (QUrl(str(item)).toLocalFile() or str(item))
+            if not local_path or not os.path.isfile(local_path):
+                continue
+            fname = os.path.basename(local_path)
+            if os.path.splitext(fname)[1].lower() not in FONT_EXTENSIONS:
+                failed_files.append(fname)
+                continue
+
+            dest = os.path.join(CUSTOM_FONTS_DIR, fname)
+            copied = False
+            if os.path.abspath(local_path) != os.path.abspath(dest):
+                if dest in self._custom_font_ids:
+                    old_fid, _ = self._custom_font_ids.pop(dest)
+                    if old_fid != -1:
+                        QFontDatabase.removeApplicationFont(old_fid)
+                shutil.copy2(local_path, dest)
+                copied = True
+
+            fid = QFontDatabase.addApplicationFont(dest)
+            fams = list(dict.fromkeys(QFontDatabase.applicationFontFamilies(fid))) if fid != -1 else []
+            if fid == -1 or not fams:
+                if copied:
+                    try:
+                        os.remove(dest)
+                    except OSError:
+                        pass
+                failed_files.append(fname)
+                continue
+
+            self._custom_font_ids[dest] = (fid, fams)
+            added_families.extend(fams)
+
+        if not added_families:
+            msg = f"Unsupported or invalid font file: {', '.join(failed_files)}" if failed_files else "No font files selected"
+            self.toastRequested.emit(msg)
+            return
+
+        self._run_fc_cache()
+        unique_fams = list(dict.fromkeys(added_families))
+        chosen = "SF Pro Display" if "SF Pro Display" in unique_fams else unique_fams[0]
+        self._settings["fontFamily"] = chosen
+        self._settings = save_settings(self._settings)
+        self.refreshStatus()
+        self.settingsChanged.emit()
+        if failed_files:
+            self.toastRequested.emit(f"Added '{chosen}' (skipped invalid: {', '.join(failed_files)})")
+        else:
+            self.toastRequested.emit(f"Added '{chosen}' and selected it")
+
+    @Slot(str)
+    def removeCustomFont(self, file_name):
+        if not file_name or os.path.basename(file_name) != file_name or file_name in (".", ".."):
+            return
+        dest = os.path.join(CUSTOM_FONTS_DIR, file_name)
+        if dest in self._custom_font_ids:
+            fid, _ = self._custom_font_ids.pop(dest)
+            if fid != -1:
+                QFontDatabase.removeApplicationFont(fid)
+        if os.path.isfile(dest):
+            try:
+                os.remove(dest)
+            except OSError as exc:
+                self.toastRequested.emit(f"Failed to remove {file_name}: {exc}")
+                return
+        self._run_fc_cache()
+        self.refreshStatus()
+        current_font = self._settings.get("fontFamily", "")
+        if current_font and current_font not in set(self._status.get("installedFonts", [])):
+            self._settings["fontFamily"] = ""
+            self._settings = save_settings(self._settings)
+            self.settingsChanged.emit()
+        self.toastRequested.emit(f"Removed custom font '{file_name}'")
 
     @Slot()
     def refreshStatus(self):

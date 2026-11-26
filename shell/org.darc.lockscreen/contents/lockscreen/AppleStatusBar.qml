@@ -15,6 +15,7 @@ RowLayout {
     property bool showKeyboardLayout: true
     property bool showBattery: true
     property bool showNetwork: true
+    property string fontFamily: ""
     property bool showLegibleShadows: true
     property color textColor: lightBackdrop ? Qt.rgba(0.05, 0.05, 0.08, 0.92) : Qt.rgba(1, 1, 1, 0.96)
     Behavior on textColor { ColorAnimation { duration: Kirigami.Units.longDuration } }
@@ -41,7 +42,9 @@ RowLayout {
             PlasmaComponents3.Label {
                 text: layoutSwitcher.layoutNames.displayName || layoutSwitcher.layoutNames.shortName.toUpperCase()
                 textFormat: Text.PlainText
-                font.styleName: "Semibold"
+                font.family: root.fontFamily !== "" ? root.fontFamily : Kirigami.Theme.defaultFont.family
+                font.styleName: (root.fontFamily === "SF Pro Display" || root.fontFamily === "SF Pro Text") ? "Semibold" : ""
+                font.weight: Font.DemiBold
                 color: root.textColor
             }
             Kirigami.Icon {
@@ -66,7 +69,9 @@ RowLayout {
         PlasmaComponents3.Label {
             text: i18nd("plasma_lookandfeel_org.kde.lookandfeel", "%1%", batteryControl.percent)
             textFormat: Text.PlainText
-            font.styleName: "Semibold"
+            font.family: root.fontFamily !== "" ? root.fontFamily : Kirigami.Theme.defaultFont.family
+            font.styleName: (root.fontFamily === "SF Pro Display" || root.fontFamily === "SF Pro Text") ? "Semibold" : ""
+            font.weight: Font.DemiBold
             color: root.textColor
             Accessible.name: i18nd("plasma_lookandfeel_org.kde.lookandfeel", "Battery at %1%", batteryControl.percent)
         }

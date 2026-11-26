@@ -48,6 +48,11 @@ Item {
             ? userSettingsLoader.item[key]
             : fallback;
     }
+    readonly property string configuredFontFamily: pref("fontFamily", "")
+    readonly property string uiFontFamily: (configuredFontFamily === "SF Pro Display"
+                                            && Qt.fontFamilies().indexOf("SF Pro Text") !== -1)
+                                           ? "SF Pro Text"
+                                           : configuredFontFamily
 
     // Biometric (Howdy Face ID or fprintd Fingerprint) state, driven by intercepted PAM messages.
     // bioMode: "face" or "fingerprint"
@@ -450,7 +455,7 @@ Item {
             clock24Hour: lockScreenUi.pref("clock24Hour", "auto")
             showAmPm: lockScreenUi.pref("clockShowAmPm", false)
             clockScale: lockScreenUi.pref("clockScale", 1.0)
-            fontFamily: lockScreenUi.pref("fontFamily", "SF Pro Display")
+            fontFamily: lockScreenUi.configuredFontFamily
             Layout.alignment: Qt.AlignBaseline
         }
 
@@ -466,7 +471,7 @@ Item {
             showWeather: lockScreenUi.pref("showWeather", true)
             showMediaControls: lockScreenUi.pref("showMediaControls", true) && config.showMediaControls
             frostedGlass: lockScreenUi.pref("frostedGlassEnabled", true)
-            fontFamily: lockScreenUi.pref("fontFamily", "SF Pro Display")
+            fontFamily: lockScreenUi.configuredFontFamily
             showLegibleShadows: lockScreenUi.pref("showLegibleShadows", true)
             lightBackdrop: backdrop.infoLight
             backdropItem: lockScreenRoot.ownWallpaper
@@ -482,6 +487,7 @@ Item {
             showKeyboardLayout: lockScreenUi.pref("showKeyboardLayout", true)
             showBattery: lockScreenUi.pref("showBattery", true)
             showNetwork: lockScreenUi.pref("showNetwork", true)
+            fontFamily: lockScreenUi.uiFontFamily
             showLegibleShadows: lockScreenUi.pref("showLegibleShadows", true)
         }
 
@@ -540,9 +546,7 @@ Item {
                 irPreviewLingerMs: lockScreenUi.pref("irPreviewLingerMs", 1200)
                 irPreviewDismissible: lockScreenUi.pref("irPreviewDismissible", true)
                 frostedGlass: lockScreenUi.pref("frostedGlassEnabled", true)
-                fontFamily: lockScreenUi.pref("fontFamily", "SF Pro Display") === "SF Pro Display"
-                            ? "SF Pro Text"
-                            : lockScreenUi.pref("fontFamily", "SF Pro Display")
+                fontFamily: lockScreenUi.uiFontFamily
                 showLegibleShadows: lockScreenUi.pref("showLegibleShadows", true)
 
                 // stock rule hides the list when it sits at y=0, which is always true in the bottom-aligned AppleSessionScreen

@@ -16,6 +16,7 @@ Item {
 
     property bool lightBackdrop: false
     property bool frostedGlass: true
+    property string fontFamily: ""
     // the wallpaper; a blurred copy of it fills the card (frosted glass)
     property Item backdropItem
     readonly property color fg: lightBackdrop ? Qt.rgba(0.05, 0.05, 0.08, 0.9) : "white"
@@ -153,7 +154,9 @@ Item {
                 PlasmaComponents3.Label {
                     Layout.fillWidth: true
                     elide: Text.ElideRight
-                    font.styleName: "Semibold"
+                    font.family: card.fontFamily !== "" ? card.fontFamily : Kirigami.Theme.defaultFont.family
+                    font.styleName: (card.fontFamily === "SF Pro Display" || card.fontFamily === "SF Pro Text") ? "Semibold" : ""
+                    font.weight: Font.DemiBold
                     maximumLineCount: 1
                     color: card.fg
                     text: model.track.length > 0
@@ -166,6 +169,7 @@ Item {
                 PlasmaComponents3.Label {
                     Layout.fillWidth: true
                     elide: Text.ElideRight
+                    font.family: card.fontFamily !== "" ? card.fontFamily : Kirigami.Theme.defaultFont.family
                     maximumLineCount: 1
                     color: card.fgDim
                     text: model.artist || model.identity

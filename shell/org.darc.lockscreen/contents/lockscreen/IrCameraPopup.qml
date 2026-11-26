@@ -29,7 +29,7 @@ Item {
     property int lingerMs: 1200
     property bool dismissible: true
     property bool frostedGlass: true
-    property string fontFamily: "SF Pro Text"
+    property string fontFamily: ""
 
     // Override directory for testing in a harness; defaults to ~/.cache/darc-lockscreen/ir-preview
     property string previewDir: StandardPaths.writableLocation(StandardPaths.GenericCacheLocation)
@@ -626,8 +626,9 @@ Item {
                     PlasmaComponents3.Label {
                         text: "IR"
                         color: Qt.rgba(1, 1, 1, 0.92)
-                        font.family: "SF Pro Text"
-                        font.styleName: "Semibold"
+                        font.family: root.fontFamily !== "" ? root.fontFamily : Kirigami.Theme.defaultFont.family
+                        font.styleName: root.fontFamily === "SF Pro Text" ? "Semibold" : ""
+                        font.weight: Font.DemiBold
                         font.pixelSize: 9
                         textFormat: Text.PlainText
                     }

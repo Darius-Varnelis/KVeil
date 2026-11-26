@@ -17,7 +17,7 @@ ColumnLayout {
     property bool showWeather: true
     property bool showMediaControls: true
     property bool frostedGlass: true
-    property string fontFamily: "SF Pro Display"
+    property string fontFamily: ""
     property bool showLegibleShadows: true
     // item to blur behind the Now Playing card (the wallpaper)
     property Item backdropItem
@@ -99,6 +99,7 @@ ColumnLayout {
             item.lightBackdrop = Qt.binding(() => root.lightBackdrop);
             item.backdropItem = Qt.binding(() => root.backdropItem);
             item.frostedGlass = Qt.binding(() => root.frostedGlass);
+            item.fontFamily = Qt.binding(() => root.fontFamily);
         }
     }
 

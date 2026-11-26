@@ -49,7 +49,7 @@ FocusScope {
     property int irPreviewLingerMs: 1200
     property bool irPreviewDismissible: true
     property bool frostedGlass: true
-    property string fontFamily: "SF Pro Text"
+    property string fontFamily: ""
     property bool showLegibleShadows: true
 
     // true when the wallpaper behind the block is bright -> dark text, lighter pill

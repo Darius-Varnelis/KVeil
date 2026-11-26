@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
+import QtQuick.Dialogs
 import org.kde.kirigami as Kirigami
 
 Kirigami.ApplicationWindow {
@@ -19,6 +20,48 @@ Kirigami.ApplicationWindow {
 
     function setOpt(key, val) {
         backend.setOption(key, val);
+    }
+
+    function buildFontComboModel() {
+        const items = [{ label: "System Default", value: "" }];
+        const seen = { "": true };
+        const custom = win.st.customFonts || [];
+        for (let i = 0; i < custom.length; i++) {
+            const fams = custom[i].families || [];
+            for (let j = 0; j < fams.length; j++) {
+                const fam = fams[j];
+                if (fam && !seen[fam]) {
+                    seen[fam] = true;
+                    items.push({ label: fam + " (Custom)", value: fam });
+                }
+            }
+        }
+        const installedSet = {};
+        const installed = win.st.installedFonts || [];
+        for (let i = 0; i < installed.length; i++) {
+            installedSet[installed[i]] = true;
+        }
+        const presets = [
+            { label: "SF Pro Display (Apple)", value: "SF Pro Display" },
+            { label: "Inter", value: "Inter" },
+            { label: "Noto Sans", value: "Noto Sans" },
+            { label: "Cantarell", value: "Cantarell" },
+            { label: "Adwaita Sans", value: "Adwaita Sans" },
+            { label: "Roboto", value: "Roboto" }
+        ];
+        for (let i = 0; i < presets.length; i++) {
+            const p = presets[i];
+            if (!seen[p.value] && installedSet[p.value]) {
+                seen[p.value] = true;
+                items.push(p);
+            }
+        }
+        const current = win.cfg.fontFamily || "";
+        if (current !== "" && !seen[current]) {
+            seen[current] = true;
+            items.push({ label: installedSet[current] ? current : current + " (not installed)", value: current });
+        }
+        return items;
     }
 
     Connections {
@@ -96,6 +139,83 @@ Kirigami.ApplicationWindow {
         subtitle: "This restores all lock screen, clock, and biometric options to their defaults."
         standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
         onAccepted: backend.resetDefaults()
+    }
+
+    FileDialog {
+        id: fontFileDialog
+        title: "Add Font Files"
+        fileMode: FileDialog.OpenFiles
+        nameFilters: ["Font files (*.ttf *.otf *.ttc)", "All files (*)"]
+        onAccepted: backend.addFontFiles(selectedFiles)
+    }
+
+    Kirigami.Dialog {
+        id: fontPickerDialog
+        title: "Choose Installed Font"
+        preferredWidth: Kirigami.Units.gridUnit * 26
+        preferredHeight: Kirigami.Units.gridUnit * 26
+        standardButtons: Kirigami.Dialog.Cancel
+
+        property string filterText: ""
+        readonly property var filteredFonts: {
+            const all = win.st.installedFonts || [];
+            const q = filterText.trim().toLowerCase();
+            if (!q) return all;
+            return all.filter(f => f.toLowerCase().indexOf(q) !== -1);
+        }
+
+        onVisibleChanged: {
+            if (visible) {
+                fontSearchField.text = "";
+                fontSearchField.forceActiveFocus();
+            }
+        }
+
+        ColumnLayout {
+            spacing: Kirigami.Units.smallSpacing
+
+            Kirigami.SearchField {
+                id: fontSearchField
+                Layout.fillWidth: true
+                Layout.margins: Kirigami.Units.smallSpacing
+                placeholderText: "Search " + (win.st.installedFonts ? win.st.installedFonts.length : 0) + " installed fonts\u2026"
+                onTextChanged: fontPickerDialog.filterText = text
+            }
+
+            ListView {
+                id: fontListView
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                model: fontPickerDialog.filteredFonts
+                QQC2.ScrollBar.vertical: QQC2.ScrollBar {}
+
+                delegate: QQC2.ItemDelegate {
+                    required property string modelData
+                    width: fontListView.width
+                    highlighted: (win.cfg.fontFamily || "") === modelData
+                    contentItem: RowLayout {
+                        spacing: Kirigami.Units.smallSpacing
+                        QQC2.Label {
+                            text: modelData
+                            font.family: modelData
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                        }
+                        QQC2.Label {
+                            text: "12:34"
+                            font.family: modelData
+                            font.weight: Font.Bold
+                            opacity: 0.7
+                        }
+                    }
+                    onClicked: {
+                        win.setOpt("fontFamily", modelData);
+                        fontPickerDialog.close();
+                    }
+                }
+            }
+        }
     }
 
     pageStack.globalToolBar.style: Kirigami.ApplicationHeaderStyle.None
@@ -644,18 +764,72 @@ Kirigami.ApplicationWindow {
                     onToggled: win.setOpt("showLegibleShadows", checked)
                 }
 
-                QQC2.ComboBox {
+                RowLayout {
                     Kirigami.FormData.label: "Font family:"
-                    textRole: "label"
-                    valueRole: "value"
-                    model: [
-                        { label: win.st.hasSfPro ? "SF Pro Display (Apple)" : "SF Pro Display (if installed)", value: "SF Pro Display" },
-                        { label: "Inter", value: "Inter" },
-                        { label: "Noto Sans", value: "Noto Sans" },
-                        { label: "System Default", value: "" }
-                    ]
-                    currentIndex: Math.max(0, model.findIndex(item => item.value === (win.cfg.fontFamily !== undefined ? win.cfg.fontFamily : "SF Pro Display")))
-                    onActivated: win.setOpt("fontFamily", currentValue)
+                    spacing: Kirigami.Units.smallSpacing
+
+                    QQC2.ComboBox {
+                        id: fontCombo
+                        textRole: "label"
+                        valueRole: "value"
+                        model: win.buildFontComboModel()
+                        currentIndex: Math.max(0, model.findIndex(item => item.value === (win.cfg.fontFamily || "")))
+                        onActivated: win.setOpt("fontFamily", currentValue)
+                    }
+                    QQC2.Button {
+                        icon.name: "preferences-desktop-font"
+                        text: "Browse\u2026"
+                        QQC2.ToolTip.visible: hovered
+                        QQC2.ToolTip.text: "Search and pick any installed system font"
+                        onClicked: fontPickerDialog.open()
+                    }
+                    QQC2.Button {
+                        icon.name: "list-add"
+                        text: "Add Font\u2026"
+                        QQC2.ToolTip.visible: hovered
+                        QQC2.ToolTip.text: "Import a .ttf, .otf, or .ttc font file into ~/.local/share/fonts/kveil"
+                        onClicked: fontFileDialog.open()
+                    }
+                }
+
+                QQC2.Label {
+                    Kirigami.FormData.label: "Font preview:"
+                    text: "12:34  \u00b7  Good evening"
+                    font.family: (win.cfg.fontFamily && win.cfg.fontFamily !== "") ? win.cfg.fontFamily : Kirigami.Theme.defaultFont.family
+                    font.weight: Font.DemiBold
+                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.15
+                    opacity: 0.85
+                }
+
+                ColumnLayout {
+                    Kirigami.FormData.label: "Added fonts:"
+                    visible: (win.st.customFonts || []).length > 0
+                    spacing: Kirigami.Units.smallSpacing
+
+                    Repeater {
+                        model: win.st.customFonts || []
+
+                        RowLayout {
+                            required property var modelData
+                            spacing: Kirigami.Units.smallSpacing
+
+                            QQC2.Label {
+                                text: (modelData.families && modelData.families.length > 0 ? modelData.families.join(", ") : modelData.fileName)
+                                      + " (" + modelData.fileName + ")"
+                                font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                opacity: 0.8
+                                elide: Text.ElideRight
+                            }
+                            QQC2.ToolButton {
+                                icon.name: "edit-delete"
+                                implicitWidth: Kirigami.Units.iconSizes.smallMedium + 8
+                                implicitHeight: implicitWidth
+                                QQC2.ToolTip.visible: hovered
+                                QQC2.ToolTip.text: "Remove " + modelData.fileName
+                                onClicked: backend.removeCustomFont(modelData.fileName)
+                            }
+                        }
+                    }
                 }
 
                 QQC2.Button {

@@ -11,7 +11,7 @@ Item {
     property string bioMode: "face" // "face" or "fingerprint"
     property string faceState: "" // "scanning", "success", "timeout", "dark", "error", "mismatch", "retry", or ""
     property bool lightBackdrop: false
-    property string fontFamily: "SF Pro Text"
+    property string fontFamily: ""
     property bool showLegibleShadows: true
     property color textColor: lightBackdrop ? Qt.rgba(0.05, 0.05, 0.08, 0.94) : Qt.rgba(1, 1, 1, 0.96)
 
