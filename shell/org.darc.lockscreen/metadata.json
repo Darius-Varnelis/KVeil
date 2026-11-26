@@ -1,0 +1,10 @@
+{
+    "KPackageStructure": "Plasma/Shell",
+    "KPlugin": {
+        "Id": "org.darc.lockscreen",
+        "Name": "Desktop (Apple lock screen)",
+        "Description": "Lock screen override; falls back to org.kde.plasma.desktop"
+    },
+    "X-Plasma-APIVersion": "2",
+    "X-Plasma-FallbackPackage": "org.kde.plasma.desktop"
+}

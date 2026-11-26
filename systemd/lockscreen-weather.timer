@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh lock screen weather every 30 minutes
+
+[Timer]
+OnStartupSec=30s
+OnUnitActiveSec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

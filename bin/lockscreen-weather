@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+# Caches current weather (wttr.in, IP-located) as a tiny QML file for the lock screen,
+# which can't do network requests itself. Strings are emitted via json.dumps, so they are
+# safe JS string literals; numbers are coerced to int.
+import json, os, sys, tempfile, urllib.request, urllib.parse, datetime
+
+OUT_DIR = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "darc-lockscreen")
+OUT = os.path.join(OUT_DIR, "Weather.qml")
+SETTINGS_PATH = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "darc-lockscreen", "settings.json")
+
+unit = "C"
+location = ""
+try:
+    with open(SETTINGS_PATH, "r") as f:
+        s = json.load(f)
+    if s.get("weatherUnit") == "F":
+        unit = "F"
+    if isinstance(s.get("weatherLocation"), str):
+        location = s["weatherLocation"].strip()
+except Exception:
+    pass
+
+# wttr.in / WWO weather codes -> Breeze icon base names
+ICONS = {
+    113: "clear", 116: "few-clouds", 119: "clouds", 122: "many-clouds",
+    143: "mist", 248: "fog", 260: "fog",
+    176: "showers-scattered", 263: "showers-scattered", 266: "showers-scattered", 293: "showers-scattered",
+    296: "showers-scattered", 353: "showers-scattered",
+    299: "showers", 302: "showers", 305: "showers", 308: "showers", 356: "showers", 359: "showers",
+    179: "snow-scattered", 323: "snow-scattered", 326: "snow-scattered", 368: "snow-scattered",
+    227: "snow", 230: "snow", 329: "snow", 332: "snow", 335: "snow", 338: "snow", 371: "snow",
+    182: "snow-rain", 185: "freezing-rain", 281: "freezing-rain", 284: "freezing-rain", 311: "freezing-rain",
+    314: "freezing-rain", 317: "snow-rain", 320: "snow-rain", 362: "snow-rain", 365: "snow-rain",
+    350: "hail", 374: "hail", 377: "hail",
+    200: "storm", 386: "storm", 389: "storm", 392: "snow-scattered-storm", 395: "snow-storm",
+}
+NIGHT = {"clear", "few-clouds", "clouds"}
+
+try:
+    loc_part = urllib.parse.quote(location) if location else ""
+    with urllib.request.urlopen(f"https://wttr.in/{loc_part}?format=j1", timeout=20) as r:
+        data = json.load(r)
+    cur = data["current_condition"][0]
+    code = int(cur["weatherCode"])
+    temp = int(cur["temp_F"] if unit == "F" else cur["temp_C"])
+    desc = cur["weatherDesc"][0]["value"].strip()
+    area = data.get("nearest_area", [{}])[0].get("areaName", [{}])[0].get("value", "")
+except Exception as e:
+    print(f"weather fetch failed: {e}", file=sys.stderr)
+    sys.exit(0)  # keep the last good file
+
+base = ICONS.get(code, "few-clouds")
+hour = datetime.datetime.now().hour
+if base in NIGHT and (hour >= 20 or hour < 6):
+    base += "-night"
+
+qml = f"""import QtQuick
+QtObject {{
+    property string temperature: {json.dumps(f"{temp}°")}
+    property string iconName: {json.dumps("weather-" + base)}
+    property string description: {json.dumps(desc)}
+    property string place: {json.dumps(area)}
+}}
+"""
+os.makedirs(OUT_DIR, exist_ok=True)
+fd, tmp = tempfile.mkstemp(dir=OUT_DIR)
+with os.fdopen(fd, "w") as f:
+    f.write(qml)
+os.replace(tmp, OUT)

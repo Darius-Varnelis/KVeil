@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+# Mirrors MPRIS album art URLs (http/https) into ~/.cache/darc-lockscreen/art/<md5(url)>.img
+# so the lock screen, which blocks network requests, can show the cover via Qt.md5(artUrl).
+import hashlib, os, threading, urllib.request
+import gi
+gi.require_version("Gio", "2.0")
+from gi.repository import Gio, GLib
+
+CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "darc-lockscreen", "art")
+MAX_BYTES = 10 * 1024 * 1024
+KEEP = 50
+os.makedirs(CACHE, exist_ok=True)
+_inflight = set()
+_lock = threading.Lock()
+
+def path_for(url):
+    return os.path.join(CACHE, hashlib.md5(url.encode()).hexdigest() + ".img")
+
+def prune():
+    files = sorted((os.path.join(CACHE, f) for f in os.listdir(CACHE) if f.endswith(".img")),
+                   key=os.path.getmtime, reverse=True)
+    for f in files[KEEP:]:
+        try: os.remove(f)
+        except OSError: pass
+
+def download(url):
+    dest = path_for(url)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "lockscreen-mpris-art"})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            if not r.headers.get("Content-Type", "").startswith("image/"):
+                return
+            data = r.read(MAX_BYTES + 1)
+        if len(data) > MAX_BYTES:
+            return
+        tmp = dest + ".part"
+        with open(tmp, "wb") as f:
+            f.write(data)
+        os.replace(tmp, dest)
+        prune()
+    except Exception as e:
+        print(f"art download failed for {url}: {e}", flush=True)
+    finally:
+        with _lock:
+            _inflight.discard(url)
+
+def handle_metadata(meta):
+    url = meta.get("mpris:artUrl") if meta else None
+    if not isinstance(url, str) or not url.startswith(("http://", "https://")):
+        return
+    dest = path_for(url)
+    if os.path.exists(dest):
+        os.utime(dest)
+        return
+    with _lock:
+        if url in _inflight:
+            return
+        _inflight.add(url)
+    threading.Thread(target=download, args=(url,), daemon=True).start()
+
+bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+
+def fetch_initial(name):
+    try:
+        res = bus.call_sync(name, "/org/mpris/MediaPlayer2", "org.freedesktop.DBus.Properties", "Get",
+                            GLib.Variant("(ss)", ("org.mpris.MediaPlayer2.Player", "Metadata")),
+                            GLib.VariantType("(v)"), Gio.DBusCallFlags.NONE, 2000, None)
+        handle_metadata(res.unpack()[0])
+    except GLib.Error:
+        pass
+
+def on_props(_conn, _sender, _path, _iface, _signal, params):
+    iface, changed, _ = params.unpack()
+    if iface == "org.mpris.MediaPlayer2.Player" and "Metadata" in changed:
+        handle_metadata(changed["Metadata"])
+
+def on_owner(_conn, _sender, _path, _iface, _signal, params):
+    name, _old, new = params.unpack()
+    if name.startswith("org.mpris.MediaPlayer2.") and new:
+        GLib.timeout_add(500, lambda: fetch_initial(name) or False)
+
+bus.signal_subscribe(None, "org.freedesktop.DBus.Properties", "PropertiesChanged",
+                     "/org/mpris/MediaPlayer2", None, Gio.DBusSignalFlags.NONE, on_props)
+bus.signal_subscribe("org.freedesktop.DBus", "org.freedesktop.DBus", "NameOwnerChanged",
+                     "/org/freedesktop/DBus", None, Gio.DBusSignalFlags.NONE, on_owner)
+
+names = bus.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "ListNames",
+                      None, GLib.VariantType("(as)"), Gio.DBusCallFlags.NONE, 2000, None).unpack()[0]
+for n in names:
+    if n.startswith("org.mpris.MediaPlayer2."):
+        fetch_initial(n)
+
+GLib.MainLoop().run()

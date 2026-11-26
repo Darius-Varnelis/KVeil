@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=KVeil
+GenericName=Lock Screen Settings
+Comment=Configure Apple-style KDE lock screen, Face ID, fingerprint, and IR preview
+Exec=sh -c 'exec "${HOME}/.local/bin/kveil"'
+Icon=kveil
+Categories=Settings;DesktopSettings;Qt;KDE;
+Keywords=kveil;lockscreen;howdy;face;fingerprint;ir;camera;clock;
+StartupNotify=true
