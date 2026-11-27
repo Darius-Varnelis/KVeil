@@ -59,6 +59,11 @@ chmod +x install.sh uninstall.sh
 1. Click **Test Lock Screen** inside **KVeil** (or run `PLASMA_DEFAULT_SHELL=org.kveil.lockscreen $(qtpaths6 --query QT_INSTALL_LIBEXECS)/kscreenlocker_greet --testing`) to preview immediately.
 2. **Log out and log back in** once so KWin picks up the `PLASMA_DEFAULT_SHELL=org.kveil.lockscreen` drop-in (`plasmashell` itself is unaffected, so your panels and widgets remain untouched).
 
+## Fonts
+
+- KVeil bundles **Inter** (`SIL OFL 1.1`, see [LICENSES/OFL-1.1.txt](LICENSES/OFL-1.1.txt)) and uses it by default out of the box.
+- For the closest macOS look, Apple's official **SF Pro** fonts (**SF Pro Display** and **SF Pro Text**, available from [Apple Developer Fonts](https://developer.apple.com/fonts/)) are recommended if your license permits using them — they are not bundled due to Apple's licensing terms, so if you have them locally you can select them in **Appearance & Setup → Font family** or import the `.otf`/`.ttf` files via **Add Font…**.
+
 ## Optional: Howdy Face Unlock & Live IR Viewfinder
 
 KVeil works out of the box with password-only lock screens and `fprintd`. If you use **Howdy**:
