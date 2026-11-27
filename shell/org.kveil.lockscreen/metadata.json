@@ -3,7 +3,8 @@
     "KPlugin": {
         "Id": "org.kveil.lockscreen",
         "Name": "Desktop (Apple lock screen)",
-        "Description": "Lock screen override; falls back to org.kde.plasma.desktop"
+        "Description": "Lock screen override; falls back to org.kde.plasma.desktop",
+        "Version": "0.1.0"
     },
     "X-Plasma-APIVersion": "2",
     "X-Plasma-FallbackPackage": "org.kde.plasma.desktop"
