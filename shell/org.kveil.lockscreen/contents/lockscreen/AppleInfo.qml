@@ -22,6 +22,8 @@ ColumnLayout {
     // item to blur behind the Now Playing card (the wallpaper)
     property Item backdropItem
     property bool lightBackdrop: false
+    property bool clockLight: lightBackdrop
+    property color clockColor: clockLight ? Qt.rgba(0.05, 0.05, 0.08, 0.84) : Qt.rgba(1, 1, 1, 0.88)
     property color textColor: lightBackdrop ? Qt.rgba(0.05, 0.05, 0.08, 0.94) : Qt.rgba(1, 1, 1, 0.96)
     Behavior on textColor { ColorAnimation { duration: Kirigami.Units.longDuration } }
 
@@ -97,6 +99,8 @@ ColumnLayout {
         source: "NowPlayingCard.qml"
         onLoaded: {
             item.lightBackdrop = Qt.binding(() => root.lightBackdrop);
+            item.lightGlass = Qt.binding(() => !root.clockLight);
+            item.glassTint = Qt.binding(() => root.clockColor);
             item.backdropItem = Qt.binding(() => root.backdropItem);
             item.frostedGlass = Qt.binding(() => root.frostedGlass);
             item.fontFamily = Qt.binding(() => root.fontFamily);

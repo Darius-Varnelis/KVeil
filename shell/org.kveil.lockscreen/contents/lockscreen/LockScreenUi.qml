@@ -474,6 +474,8 @@ Item {
             fontFamily: lockScreenUi.configuredFontFamily
             showLegibleShadows: lockScreenUi.pref("showLegibleShadows", true)
             lightBackdrop: backdrop.infoLight
+            clockLight: backdrop.clockLight
+            clockColor: clock.vibrancy
             backdropItem: lockScreenRoot.ownWallpaper
         }
 

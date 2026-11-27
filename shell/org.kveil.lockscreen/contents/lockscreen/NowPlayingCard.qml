@@ -15,12 +15,15 @@ Item {
     implicitHeight: Kirigami.Units.gridUnit * 4
 
     property bool lightBackdrop: false
+    // Glass matches the clock's font color: white clock font -> white glass, dark clock font -> dark glass
+    property bool lightGlass: !lightBackdrop
+    property color glassTint: lightGlass ? Qt.rgba(1, 1, 1, 0.88) : Qt.rgba(0.05, 0.05, 0.08, 0.84)
     property bool frostedGlass: true
     property string fontFamily: ""
     // the wallpaper; a blurred copy of it fills the card (frosted glass)
     property Item backdropItem
-    readonly property color fg: lightBackdrop ? Qt.rgba(0.05, 0.05, 0.08, 0.9) : "white"
-    readonly property color fgDim: lightBackdrop ? Qt.rgba(0.05, 0.05, 0.08, 0.6) : Qt.rgba(1, 1, 1, 0.7)
+    readonly property color fg: lightGlass ? Qt.rgba(0.05, 0.05, 0.08, 0.9) : "white"
+    readonly property color fgDim: lightGlass ? Qt.rgba(0.05, 0.05, 0.08, 0.6) : Qt.rgba(1, 1, 1, 0.7)
     // album art is mirrored to ~/.cache/kveil/art/<md5(url)>.img by ~/.local/bin/lockscreen-mpris-art,
     // because the greeter blocks network requests
     readonly property string artCache: StandardPaths.writableLocation(StandardPaths.GenericCacheLocation) + "/kveil/art/"
@@ -54,8 +57,8 @@ Item {
         blurEnabled: true
         blur: 1.0
         blurMax: 56
-        saturation: card.lightBackdrop ? 0.30 : 0.15
-        brightness: card.lightBackdrop ? 0.18 : -0.32
+        saturation: card.lightGlass ? 0.30 : 0.15
+        brightness: card.lightGlass ? 0.18 : -0.32
         maskEnabled: true
         maskSource: glassMask
     }
@@ -72,9 +75,9 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: Kirigami.Units.gridUnit
-        color: card.lightBackdrop ? Qt.rgba(1, 1, 1, 0.30) : Qt.rgba(0, 0, 0, 0.22)
+        color: Qt.rgba(card.glassTint.r, card.glassTint.g, card.glassTint.b, card.lightGlass ? 0.30 : 0.28)
         border.width: 1
-        border.color: card.lightBackdrop ? Qt.rgba(1, 1, 1, 0.38) : Qt.rgba(1, 1, 1, 0.08)
+        border.color: card.lightGlass ? Qt.rgba(1, 1, 1, 0.38) : Qt.rgba(1, 1, 1, 0.10)
         Behavior on color { ColorAnimation { duration: Kirigami.Units.longDuration } }
         Behavior on border.color { ColorAnimation { duration: Kirigami.Units.longDuration } }
     }
@@ -97,9 +100,9 @@ Item {
                     id: artPlaceholder
                     anchors.fill: parent
                     radius: Kirigami.Units.smallSpacing * 2
-                    color: card.lightBackdrop ? Qt.rgba(0, 0, 0, 0.08) : Qt.rgba(1, 1, 1, 0.14)
+                    color: card.lightGlass ? Qt.rgba(0, 0, 0, 0.08) : Qt.rgba(1, 1, 1, 0.14)
                     border.width: 1
-                    border.color: card.lightBackdrop ? Qt.rgba(0, 0, 0, 0.06) : Qt.rgba(1, 1, 1, 0.08)
+                    border.color: card.lightGlass ? Qt.rgba(0, 0, 0, 0.06) : Qt.rgba(1, 1, 1, 0.08)
                     visible: albumArt.status !== Image.Ready
 
                     Kirigami.Icon {
