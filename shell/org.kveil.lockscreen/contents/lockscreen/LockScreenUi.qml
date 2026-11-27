@@ -38,6 +38,11 @@ Item {
     // Whether we are expected to visualize the prompt message for the authenticator
     property bool showPrompt: false // this is set for real when an authenticator is selected
 
+    FontLoader {
+        id: bundledInterFont
+        source: Qt.resolvedUrl("fonts/InterVariable.ttf")
+    }
+
     // User settings written by Lock Screen Settings GUI to ~/.cache/kveil/Settings.qml
     Loader {
         id: userSettingsLoader
@@ -48,7 +53,13 @@ Item {
             ? userSettingsLoader.item[key]
             : fallback;
     }
-    readonly property string configuredFontFamily: pref("fontFamily", "")
+    readonly property string configuredFontFamily: {
+        const f = pref("fontFamily", bundledInterFont.name !== "" ? bundledInterFont.name : "Inter Variable");
+        if (f === "" || Qt.fontFamilies().indexOf(f) !== -1) {
+            return f;
+        }
+        return bundledInterFont.name !== "" ? bundledInterFont.name : "Inter Variable";
+    }
     readonly property string uiFontFamily: (configuredFontFamily === "SF Pro Display"
                                             && Qt.fontFamilies().indexOf("SF Pro Text") !== -1)
                                            ? "SF Pro Text"

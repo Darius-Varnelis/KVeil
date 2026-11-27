@@ -57,7 +57,7 @@ DEFAULTS = {
     # Appearance
     "backdropMode": "auto",        # "auto" | "lightText" | "darkText"
     "frostedGlassEnabled": True,
-    "fontFamily": "",
+    "fontFamily": "Inter Variable",
     "showLegibleShadows": True,
 }
 

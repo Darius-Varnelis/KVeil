@@ -30,6 +30,10 @@ CUSTOM_FONTS_DIR = os.path.join(
     "kveil",
 )
 FONT_EXTENSIONS = {".ttf", ".otf", ".ttc"}
+BUNDLED_FONT_CANDIDATES = (
+    os.path.join(SHELL_DIR, "contents", "lockscreen", "fonts", "InterVariable.ttf"),
+    os.path.join(os.path.dirname(APP_DIR), "shell", "org.kveil.lockscreen", "contents", "lockscreen", "fonts", "InterVariable.ttf"),
+)
 STAGED_COMPARE = os.path.join(APP_DIR, "compare.py")
 HOWDY_ENABLE_KEYS = {"faceStatusEnabled", "irPreviewEnabled"}
 FPRINT_ENABLE_KEYS = {"fingerprintStatusEnabled"}
@@ -106,20 +110,31 @@ class LockscreenSettingsBackend(QObject):
     def __init__(self):
         super().__init__()
         self._custom_font_ids = {}
+        self._bundled_font_families = []
+        self._load_bundled_fonts()
         self._scan_custom_fonts()
         first_run = not os.path.exists(SETTINGS_JSON)
         self._settings = load_settings()
         if first_run:
             families = set(QFontDatabase.families())
-            if "SF Pro Display" in families:
+            bundled = self._bundled_font_families[0] if self._bundled_font_families else "Inter Variable"
+            if bundled in families:
+                self._settings["fontFamily"] = bundled
+            elif "SF Pro Display" in families:
                 self._settings["fontFamily"] = "SF Pro Display"
-            elif "SF Pro Text" in families:
-                self._settings["fontFamily"] = "SF Pro Text"
             else:
                 self._settings["fontFamily"] = ""
         # Ensure Settings.qml exists on first launch so the lock screen picks up defaults
         save_settings(self._settings)
         self._status = self._collect_status()
+
+    def _load_bundled_fonts(self):
+        for path in BUNDLED_FONT_CANDIDATES:
+            if os.path.isfile(path):
+                fid = QFontDatabase.addApplicationFont(path)
+                if fid != -1:
+                    self._bundled_font_families = list(dict.fromkeys(QFontDatabase.applicationFontFamilies(fid)))
+                break
 
     def _run_fc_cache(self):
         fc_cache = shutil.which("fc-cache")
@@ -274,6 +289,7 @@ class LockscreenSettingsBackend(QObject):
             "weatherBinOk": weather_bin_ok,
             "weatherCached": os.path.exists(os.path.join(cache_home, "kveil", "Weather.qml")),
             "hasSfPro": has_sf_pro,
+            "bundledFontFamily": self._bundled_font_families[0] if self._bundled_font_families else "Inter Variable",
             "installedFonts": installed_fonts,
             "customFonts": custom_fonts,
             "customFontsDir": CUSTOM_FONTS_DIR,

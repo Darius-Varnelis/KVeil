@@ -23,8 +23,13 @@ Kirigami.ApplicationWindow {
     }
 
     function buildFontComboModel() {
-        const items = [{ label: "System Default", value: "" }];
+        const bundled = win.st.bundledFontFamily || "Inter Variable";
+        const items = [
+            { label: "Inter (Bundled)", value: bundled },
+            { label: "System Default", value: "" }
+        ];
         const seen = { "": true };
+        seen[bundled] = true;
         const custom = win.st.customFonts || [];
         for (let i = 0; i < custom.length; i++) {
             const fams = custom[i].families || [];
@@ -43,7 +48,7 @@ Kirigami.ApplicationWindow {
         }
         const presets = [
             { label: "SF Pro Display (Apple)", value: "SF Pro Display" },
-            { label: "Inter", value: "Inter" },
+            { label: "Inter (System)", value: "Inter" },
             { label: "Noto Sans", value: "Noto Sans" },
             { label: "Cantarell", value: "Cantarell" },
             { label: "Adwaita Sans", value: "Adwaita Sans" },
@@ -56,7 +61,7 @@ Kirigami.ApplicationWindow {
                 items.push(p);
             }
         }
-        const current = win.cfg.fontFamily || "";
+        const current = win.cfg.fontFamily !== undefined ? win.cfg.fontFamily : bundled;
         if (current !== "" && !seen[current]) {
             seen[current] = true;
             items.push({ label: installedSet[current] ? current : current + " (not installed)", value: current });
@@ -775,7 +780,7 @@ Kirigami.ApplicationWindow {
                         textRole: "label"
                         valueRole: "value"
                         model: win.buildFontComboModel()
-                        currentIndex: Math.max(0, model.findIndex(item => item.value === (win.cfg.fontFamily || "")))
+                        currentIndex: Math.max(0, model.findIndex(item => item.value === (win.cfg.fontFamily !== undefined ? win.cfg.fontFamily : (win.st.bundledFontFamily || "Inter Variable"))))
                         onActivated: win.setOpt("fontFamily", currentValue)
                     }
                     QQC2.Button {
