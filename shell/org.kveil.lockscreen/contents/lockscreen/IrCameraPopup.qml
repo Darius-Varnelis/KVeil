@@ -69,6 +69,8 @@ Item {
     property bool _useBufferA: false
     property var _faceBox: null // normalized [x1, y1, x2, y2] in raw frame space
     property var _pendingFaceBox: null
+    property real _peakFrameLuma: 0
+    property int _darkFrameStreak: 0
     property real _shakeX: 0
 
     readonly property bool shouldShow: previewEnabled && !_dismissed && (faceState === "scanning" || _linger)
@@ -100,12 +102,15 @@ Item {
             _lastFrameSeq = -1;
             _frameLoadSeq = 0;
             _useBufferA = false;
+            _peakFrameLuma = 0;
+            _darkFrameStreak = 0;
             lingerTimer.stop();
             faceLostTimer.stop();
             // Clear stale textures from previous attempt
             frameA.source = "";
             frameB.source = "";
             faceDataCanvas.resetUrl();
+            frameLumaCanvas.resetUrl();
             _pollSeq++;
         } else if (faceState === "success") {
             _linger = true;
@@ -131,11 +136,14 @@ Item {
             frameA.source = "";
             frameB.source = "";
             faceDataCanvas.resetUrl();
+            frameLumaCanvas.resetUrl();
             _hasFrame = false;
             _useLegacyDir = false;
             _faceBox = null;
             _pendingFaceBox = null;
             _lastFrameSeq = -1;
+            _peakFrameLuma = 0;
+            _darkFrameStreak = 0;
         }
     }
 
@@ -228,20 +236,114 @@ Item {
             const seq = row[p1 + 2];
             if (seq !== root._lastFrameSeq) {
                 root._lastFrameSeq = seq;
-                root._pendingFaceBox = box;
                 root._frameLoadSeq++;
                 const frameUrl = root._activePreviewDir + "/frame.jpg?r=" + root._frameLoadSeq;
-                if (root._useBufferA) {
-                    frameB.source = frameUrl;
-                } else {
-                    frameA.source = frameUrl;
-                }
+                frameLumaCanvas.checkFrame(frameUrl, box);
             } else if (box !== null) {
                 root._pendingFaceBox = box;
                 if (root._hasFrame) {
                     root._faceBox = box;
                 }
             }
+        }
+    }
+
+    // Measures frame.jpg average luminance before committing it to frameA/frameB so
+    // unlit/dark IR emitter frames are dropped instead of causing preview flicker.
+    Canvas {
+        id: frameLumaCanvas
+        x: 20
+        y: 20
+        width: 16
+        height: 10
+        renderStrategy: Canvas.Immediate
+        property string loadedUrl: ""
+        property bool loading: false
+        property var candidateBox: null
+        property string queuedUrl: ""
+        property var queuedBox: null
+
+        function resetUrl() {
+            if (loadedUrl) {
+                unloadImage(loadedUrl);
+                loadedUrl = "";
+            }
+            loading = false;
+            candidateBox = null;
+            queuedUrl = "";
+            queuedBox = null;
+        }
+
+        function checkFrame(url, box) {
+            if (loading) {
+                queuedUrl = url;
+                queuedBox = box;
+                return;
+            }
+            if (loadedUrl) {
+                unloadImage(loadedUrl);
+            }
+            loading = true;
+            loadedUrl = url;
+            candidateBox = box;
+            loadImage(url);
+        }
+
+        function _advanceQueue() {
+            if (queuedUrl !== "") {
+                const nextUrl = queuedUrl;
+                const nextBox = queuedBox;
+                queuedUrl = "";
+                queuedBox = null;
+                checkFrame(nextUrl, nextBox);
+            }
+        }
+
+        onImageLoaded: {
+            loading = false;
+            if (loadedUrl && isImageLoaded(loadedUrl)) {
+                requestPaint();
+            } else {
+                _advanceQueue();
+            }
+        }
+
+        onPaint: {
+            if (!loadedUrl || !isImageLoaded(loadedUrl)) {
+                _advanceQueue();
+                return;
+            }
+            const dpr = (Window.window && Window.window.devicePixelRatio > 0)
+                ? Window.window.devicePixelRatio
+                : ((Screen.devicePixelRatio > 0) ? Screen.devicePixelRatio : 1);
+            const devW = Math.max(2, Math.floor(width * dpr));
+            const devH = Math.max(2, Math.floor(height * dpr));
+            const ctx = getContext("2d");
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(loadedUrl, 0, 0, width, height);
+            const d = ctx.getImageData(0, 0, devW, devH).data;
+            let sum = 0;
+            const n = devW * devH;
+            for (let i = 0; i < d.length; i += 4) {
+                sum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+            }
+            const luma = sum / Math.max(1, n);
+            const isDark = (luma < 16.0) || (root._peakFrameLuma >= 32.0 && luma < root._peakFrameLuma * 0.45);
+            const maxSkip = root._hasFrame ? 8 : 6;
+            if (isDark && root._darkFrameStreak < maxSkip) {
+                root._darkFrameStreak++;
+                _advanceQueue();
+                return;
+            }
+            root._darkFrameStreak = 0;
+            root._peakFrameLuma = Math.max(luma, root._peakFrameLuma * 0.985);
+            root._pendingFaceBox = candidateBox;
+            if (root._useBufferA) {
+                frameB.source = loadedUrl;
+            } else {
+                frameA.source = loadedUrl;
+            }
+            _advanceQueue();
         }
     }
 

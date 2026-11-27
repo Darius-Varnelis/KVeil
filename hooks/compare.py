@@ -553,6 +553,8 @@ def _capture_loop():
 	preview_seq = 0
 	prev_preview_box = None
 	missed_preview_frames = 0
+	peak_raw_mean = 0.0
+	dark_skip_streak = 0
 
 	while not _stop_event.is_set():
 		frames += 1
@@ -563,6 +565,7 @@ def _capture_loop():
 		except Exception:
 			break
 
+		raw_mean = float(np.mean(cap_gs))
 		cap_gs = clahe.apply(cap_gs)
 
 		if capture_failed or capture_successful:
@@ -577,35 +580,41 @@ def _capture_loop():
 			black_tries += 1
 			continue
 
-		if scaling_factor != 1:
-			cap_frame = cv2.resize(cap_frame, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
-			cap_gs = cv2.resize(cap_gs, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
-
-		if _preview_dir:
-			_emit_preview_frame(cap_gs)
-			preview_seq = (preview_seq + 1) & 0xFF
-			# Emit frame 1 trigger immediately so QML displays live video without waiting for detection
-			if preview_seq == 1:
-				_emit_preview_face(None, cap_gs.shape, preview_seq)
-			if _preview_track and darkness <= dark_threshold:
-				detected_box = _detect_preview_face(cap_gs, prev_preview_box)
-			else:
-				detected_box = None
-			if detected_box is not None:
-				prev_preview_box = detected_box
-				missed_preview_frames = 0
-			else:
-				missed_preview_frames += 1
-				if missed_preview_frames >= 4:
-					prev_preview_box = None
-			if preview_seq != 1 or detected_box is not None:
-				_emit_preview_face(detected_box, cap_gs.shape, preview_seq)
-
 		dark_running_total += darkness
 		valid_frames += 1
 		if darkness > dark_threshold:
 			dark_tries += 1
 			continue
+
+		if scaling_factor != 1:
+			cap_frame = cv2.resize(cap_frame, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
+			cap_gs = cv2.resize(cap_gs, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
+
+		if _preview_dir and darkness < 95.0:
+			is_dark_flicker = (raw_mean < 12.0) or (peak_raw_mean >= 24.0 and raw_mean < peak_raw_mean * 0.45)
+			if is_dark_flicker and dark_skip_streak < 8:
+				dark_skip_streak += 1
+			else:
+				dark_skip_streak = 0
+				peak_raw_mean = max(raw_mean, peak_raw_mean * 0.985)
+				_emit_preview_frame(cap_gs)
+				preview_seq = (preview_seq + 1) & 0xFF
+				# Emit frame 1 trigger immediately so QML displays live video without waiting for detection
+				if preview_seq == 1:
+					_emit_preview_face(None, cap_gs.shape, preview_seq)
+				if _preview_track:
+					detected_box = _detect_preview_face(cap_gs, prev_preview_box)
+				else:
+					detected_box = None
+				if detected_box is not None:
+					prev_preview_box = detected_box
+					missed_preview_frames = 0
+				else:
+					missed_preview_frames += 1
+					if missed_preview_frames >= 4:
+						prev_preview_box = None
+				if preview_seq != 1 or detected_box is not None:
+					_emit_preview_face(detected_box, cap_gs.shape, preview_seq)
 
 		with _slot_cond:
 			_latest_pair = (cap_frame, cap_gs)
