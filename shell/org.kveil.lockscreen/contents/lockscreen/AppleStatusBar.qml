@@ -1,6 +1,7 @@
 // macOS-style status items in the top-right corner: keyboard layout, battery %, Wi-Fi.
 import QtQuick
 import QtQuick.Layouts
+import Qt5Compat.GraphicalEffects
 
 import org.kde.plasma.components as PlasmaComponents3
 import org.kde.plasma.workspace.components as PW
@@ -92,11 +93,21 @@ RowLayout {
     }
 
     Kirigami.Icon {
+        // Non-symbolic theme icons (e.g. network-wireless-*) ignore Kirigami.Icon's isMask tinting
+        // when the theme lacks ColorScheme-Text or caches pixmaps, so force textColor via ColorOverlay.
+        id: networkIcon
+        readonly property bool useOverlay: GraphicsInfo.api !== GraphicsInfo.Software
+        readonly property color opaqueColor: Qt.rgba(root.textColor.r, root.textColor.g, root.textColor.b, 1.0)
         Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
         Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
         source: connectionIcon.connectionIcon
         visible: root.showNetwork && source !== ""
-        color: root.textColor
+        color: useOverlay ? opaqueColor : root.textColor
         isMask: true
+        opacity: useOverlay ? root.textColor.a : 1.0
+        layer.enabled: useOverlay
+        layer.effect: ColorOverlay {
+            color: networkIcon.opaqueColor
+        }
     }
 }

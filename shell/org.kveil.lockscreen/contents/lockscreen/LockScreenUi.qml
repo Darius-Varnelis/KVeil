@@ -399,6 +399,24 @@ Item {
         AppleBackdrop {
             id: backdrop
             source: lockScreenRoot.ownWallpaper
+            sourceLoading: Boolean(lockScreenRoot.ownWallpaper && wallpaper.loading)
+            cacheKey: {
+                if (!wallpaper) return "";
+                const plugin = wallpaper.pluginName || "";
+                const cfg = wallpaper.configuration;
+                if (!cfg) return plugin;
+                const parts = [plugin];
+                if (cfg.Image !== undefined) parts.push(String(cfg.Image));
+                if (cfg.Color !== undefined) parts.push(String(cfg.Color));
+                if (cfg.FillMode !== undefined) parts.push(String(cfg.FillMode));
+                if (cfg.Blur !== undefined) parts.push(String(cfg.Blur));
+                if (cfg.Provider !== undefined) parts.push(String(cfg.Provider));
+                return parts.join("|");
+            }
+            dynamicWallpaper: Boolean(wallpaper
+                && (wallpaper.pluginName === "org.kde.slideshow"
+                    || wallpaper.pluginName === "org.kde.potd"
+                    || (wallpaper.configuration && wallpaper.configuration.DynamicMode === true)))
             function effective(luma: real): bool {
                 let l = luma;
                 if (lockScreenRoot.uiVisible) {
@@ -496,7 +514,7 @@ Item {
             anchors.top: parent.top
             anchors.right: parent.right
             anchors.margins: Kirigami.Units.largeSpacing * 2
-            lightBackdrop: backdrop.statusLight
+            lightBackdrop: backdrop.clockLight
             showKeyboardLayout: lockScreenUi.pref("showKeyboardLayout", true)
             showBattery: lockScreenUi.pref("showBattery", true)
             showNetwork: lockScreenUi.pref("showNetwork", true)
@@ -732,11 +750,42 @@ Item {
             PlasmaComponents3.ToolButton {
                 id: virtualKeyboardButton
                 visible: lockScreenUi.pref("showVirtualKeyboard", true)
+                readonly property bool lightBackdrop: backdrop.clockLight
+                property color iconColor: lightBackdrop ? Qt.rgba(0.05, 0.05, 0.08, 0.92) : Qt.rgba(1, 1, 1, 0.96)
+                readonly property color opaqueIconColor: Qt.rgba(iconColor.r, iconColor.g, iconColor.b, 1.0)
+                Behavior on iconColor { ColorAnimation { duration: Kirigami.Units.longDuration } }
+                Kirigami.Theme.inherit: false
+                Kirigami.Theme.textColor: iconColor
 
                 focusPolicy: Qt.TabFocus
                 text: i18ndc("plasma_shell_org.kde.plasma.desktop", "Button to show/hide virtual keyboard", "Virtual Keyboard")
                 icon.name: Keyboards.KWinVirtualKeyboard.visible ? "input-keyboard-virtual-on" : "input-keyboard-virtual-off"
+                icon.color: iconColor
                 display: PlasmaComponents3.AbstractButton.IconOnly
+
+                contentItem: Item {
+                    id: vkContent
+                    readonly property bool useOverlay: !lockScreenUi.softwareRendering
+                    implicitWidth: Kirigami.Units.iconSizes.smallMedium
+                    implicitHeight: Kirigami.Units.iconSizes.smallMedium
+                    layer.enabled: vkContent.useOverlay && lockScreenUi.pref("showLegibleShadows", true)
+                    layer.effect: LegibleShadow { light: virtualKeyboardButton.lightBackdrop }
+
+                    Kirigami.Icon {
+                        anchors.centerIn: parent
+                        width: Kirigami.Units.iconSizes.smallMedium
+                        height: Kirigami.Units.iconSizes.smallMedium
+                        source: virtualKeyboardButton.icon.name
+                        color: vkContent.useOverlay ? virtualKeyboardButton.opaqueIconColor : virtualKeyboardButton.iconColor
+                        isMask: true
+                        opacity: vkContent.useOverlay ? virtualKeyboardButton.iconColor.a : 1.0
+                        layer.enabled: vkContent.useOverlay
+                        layer.effect: ColorOverlay {
+                            color: virtualKeyboardButton.opaqueIconColor
+                        }
+                    }
+                }
+
                 onClicked: {
                     if (Keyboards.KWinVirtualKeyboard.visible) {
                         Keyboards.KWinVirtualKeyboard.active = false;
