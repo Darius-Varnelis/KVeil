@@ -24,7 +24,7 @@ An Apple/macOS-style lock screen shell (`org.kveil.lockscreen`) and Kirigami set
 
 - **KDE Plasma 6** (Qt 6, `kscreenlocker`, `qt6-5compat` / `Qt5Compat.GraphicalEffects`, `QtQuick.Effects`)
 - **Python 3** with **PySide6** and **PyGObject** (`gi.repository.Gio`)
-- **systemd --user** (for the KWin `PLASMA_DEFAULT_SHELL` override and background weather/MPRIS helpers)
+- **Init-agnostic session support:** uses **systemd --user** where available, or falls back automatically to `~/.config/plasma-workspace/env/` + XDG autostart on non-systemd distros (Devuan, Artix, Void, etc.)
 - **Optional:** **Howdy** (tested with 2.6.1) or **fprintd**
 
 ### Installing Dependencies by Distro

@@ -2,23 +2,19 @@
 # Caches current weather (wttr.in, IP-located) as a tiny QML file for the lock screen,
 # which can't do network requests itself. Strings are emitted via json.dumps, so they are
 # safe JS string literals; numbers are coerced to int.
-import json, os, sys, tempfile, urllib.request, urllib.parse, datetime
+import datetime
+import json
+import os
+import signal
+import sys
+import tempfile
+import threading
+import urllib.parse
+import urllib.request
 
 OUT_DIR = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "kveil")
 OUT = os.path.join(OUT_DIR, "Weather.qml")
 SETTINGS_PATH = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "kveil", "settings.json")
-
-unit = "C"
-location = ""
-try:
-    with open(SETTINGS_PATH, "r") as f:
-        s = json.load(f)
-    if s.get("weatherUnit") == "F":
-        unit = "F"
-    if isinstance(s.get("weatherLocation"), str):
-        location = s["weatherLocation"].strip()
-except Exception:
-    pass
 
 # wttr.in / WWO weather codes -> Breeze icon base names
 ICONS = {
@@ -36,25 +32,45 @@ ICONS = {
 }
 NIGHT = {"clear", "few-clouds", "clouds"}
 
-try:
-    loc_part = urllib.parse.quote(location) if location else ""
-    with urllib.request.urlopen(f"https://wttr.in/{loc_part}?format=j1", timeout=20) as r:
-        data = json.load(r)
-    cur = data["current_condition"][0]
-    code = int(cur["weatherCode"])
-    temp = int(cur["temp_F"] if unit == "F" else cur["temp_C"])
-    desc = cur["weatherDesc"][0]["value"].strip()
-    area = data.get("nearest_area", [{}])[0].get("areaName", [{}])[0].get("value", "")
-except Exception as e:
-    print(f"weather fetch failed: {e}", file=sys.stderr)
-    sys.exit(0)  # keep the last good file
 
-base = ICONS.get(code, "few-clouds")
-hour = datetime.datetime.now().hour
-if base in NIGHT and (hour >= 20 or hour < 6):
-    base += "-night"
+def read_preferences():
+    """Return (unit, location) from KVeil's settings.json."""
+    unit = "C"
+    location = ""
+    try:
+        with open(SETTINGS_PATH, "r") as f:
+            s = json.load(f)
+        if s.get("weatherUnit") == "F":
+            unit = "F"
+        if isinstance(s.get("weatherLocation"), str):
+            location = s["weatherLocation"].strip()
+    except Exception:
+        pass
+    return unit, location
 
-qml = f"""import QtQuick
+
+def fetch_and_write_weather():
+    """Fetch current weather from wttr.in and atomically update Weather.qml."""
+    unit, location = read_preferences()
+    try:
+        loc_part = urllib.parse.quote(location) if location else ""
+        with urllib.request.urlopen(f"https://wttr.in/{loc_part}?format=j1", timeout=20) as r:
+            data = json.load(r)
+        cur = data["current_condition"][0]
+        code = int(cur["weatherCode"])
+        temp = int(cur["temp_F"] if unit == "F" else cur["temp_C"])
+        desc = cur["weatherDesc"][0]["value"].strip()
+        area = data.get("nearest_area", [{}])[0].get("areaName", [{}])[0].get("value", "")
+    except Exception as e:
+        print(f"weather fetch failed: {e}", file=sys.stderr)
+        return False
+
+    base = ICONS.get(code, "few-clouds")
+    hour = datetime.datetime.now().hour
+    if base in NIGHT and (hour >= 20 or hour < 6):
+        base += "-night"
+
+    qml = f"""import QtQuick
 QtObject {{
     property string temperature: {json.dumps(f"{temp}°")}
     property string iconName: {json.dumps("weather-" + base)}
@@ -62,8 +78,37 @@ QtObject {{
     property string place: {json.dumps(area)}
 }}
 """
-os.makedirs(OUT_DIR, exist_ok=True)
-fd, tmp = tempfile.mkstemp(dir=OUT_DIR)
-with os.fdopen(fd, "w") as f:
-    f.write(qml)
-os.replace(tmp, OUT)
+    os.makedirs(OUT_DIR, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=OUT_DIR)
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(qml)
+        os.replace(tmp, OUT)
+    except Exception:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+        raise
+    return True
+
+
+def main():
+    if "--daemon" not in sys.argv[1:]:
+        fetch_and_write_weather()
+        return
+
+    stop_event = threading.Event()
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(sig, lambda _s, _f: stop_event.set())
+
+    # Match systemd timer behavior (OnStartupSec=30s, OnUnitActiveSec=30min) for non-systemd sessions
+    if stop_event.wait(30):
+        return
+    while not stop_event.is_set():
+        fetch_and_write_weather()
+        stop_event.wait(1800)
+
+
+if __name__ == "__main__":
+    main()

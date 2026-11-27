@@ -185,10 +185,12 @@ class LockscreenSettingsBackend(QObject):
         shell_installed = os.path.isdir(os.path.join(SHELL_DIR, "contents", "lockscreen"))
         env_shell = os.environ.get("PLASMA_DEFAULT_SHELL", "")
         cfg_home = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
-        systemd_dropin = (
+        systemd_active = os.path.isdir("/run/systemd/system")
+        systemd_dropin = systemd_active and (
             os.path.exists(os.path.join(cfg_home, "systemd/user/plasma-kwin_wayland.service.d/apple-lockscreen.conf"))
             or os.path.exists(os.path.join(cfg_home, "systemd/user/plasma-kwin_x11.service.d/apple-lockscreen.conf"))
         )
+        env_override = os.path.exists(os.path.join(cfg_home, "plasma-workspace/env/kveil.sh"))
         howdy_bin = (
             shutil.which("howdy") is not None
             or os.path.isfile("/usr/local/bin/howdy")
@@ -229,7 +231,7 @@ class LockscreenSettingsBackend(QObject):
 
         runtime_dir = os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
         howdyd_running = os.path.exists(os.path.join(runtime_dir, "howdyd.sock"))
-        howdyd_service_installed = os.path.isfile(
+        howdyd_service_installed = systemd_active and os.path.isfile(
             os.path.join(cfg_home, "systemd", "user", "howdyd.service")
         )
 
@@ -273,7 +275,7 @@ class LockscreenSettingsBackend(QObject):
         cache_home = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
         return {
             "shellInstalled": shell_installed,
-            "shellActive": env_shell == "org.kveil.lockscreen" or systemd_dropin,
+            "shellActive": env_shell == "org.kveil.lockscreen" or systemd_dropin or env_override,
             "howdyPresent": howdy_present,
             "howdyBackend": howdy_backend,
             "howdyRsPresent": howdy_rs_present,
